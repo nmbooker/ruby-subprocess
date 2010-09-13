@@ -25,6 +25,10 @@ class Subprocess
   # args:: The argument list to run, including the program path at position 0.
   #        A list of strings.
   # opts:: A hash of options modifying the default behaviour.
+  #
+  # Options (the opts argument):
+  # :chdir:: Change directory to the given path after forking.
+  #          If nil (the default), no directory change is performed.
   def initialize(args, opts={})
     @opts = {
       :chdir => nil,
@@ -32,12 +36,8 @@ class Subprocess
     @status = nil
     @args = args
     @pid = Process.fork do
-      if opts[:chdir].nil?
+      opt_chdir do |path|
         exec *args
-      else
-        Dir.chdir(opts[:chdir]) do
-          exec *args
-        end
       end
     end      
   end
@@ -49,6 +49,19 @@ class Subprocess
     pid, status = Process.wait2(@pid)
     @status = status
     return status
+  end
+
+  # Change directory if requested in opts, and execute the block
+  # path is passed into the block, and is the present working directory
+  protected
+  def opt_chdir
+    if @opts[:chdir].nil?
+      yield Dir.getwd
+    else
+      Dir.chdir(opts[:chdir]) do |path|
+        yield path
+      end
+    end
   end
 end
 

@@ -97,22 +97,24 @@ class Subprocess
   end
 
   private
-  def set_stdout_inchild(read_end, write_end)
-    if must_pipe(:stdout)
-      read_end.close
-      $stdout.reopen(write_end)
-    elsif must_redirect(:stdout)
-      $stdout.reopen(@opts[:stdout])
+  def select_child_stream(stream_id)
+    stream = case stream_id
+      when :stdin then $stdin
+      when :stdout then $stdout
+      when :stderr then $stderr
+      else nil
     end
+    return stream
   end
 
   private
-  def set_stdin_inchild(read_end, write_end)
-    if must_pipe(:stdin)
-      write_end.close
-      $stdin.reopen(read_end)
-    elsif must_redirect(:stdin)
-      $stdin.reopen(@opts[:stdin])
+  def setup_stream_inchild(stream_id, child_end, parent_end)
+    stream = select_child_stream(stream_id)
+    if must_pipe(stream_id)
+      parent_end.close
+      stream.reopen(child_end)
+    elsif must_redirect(stream_id)
+      stream.reopen(@opts[stream_id])
     end
   end
 
@@ -133,8 +135,8 @@ class Subprocess
     stdout_read, stdout_write = get_pipe(must_pipe(:stdout))
     stdin_read, stdin_write = get_pipe(must_pipe(:stdin))
     pid = Process.fork do
-      set_stdout_inchild(stdout_read, stdout_write)
-      set_stdin_inchild(stdin_read, stdin_write)
+      setup_stream_inchild(:stdout, stdout_write, stdout_read)
+      setup_stream_inchild(:stdin, stdin_read, stdin_write)
       yield
     end
     if must_pipe(:stdout)

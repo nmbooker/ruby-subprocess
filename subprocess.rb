@@ -94,17 +94,21 @@ class Subprocess
     end
   end
 
+  private
+  def get_pipe(needs_pipe)
+    if needs_pipe
+      return IO.pipe
+    else
+      return nil, nil
+    end
+  end
+
   # Fork, creating pipes.  => pid, child_stdout
   #
   # The block is executed in the child process with stdout set as appropriate.
   private
   def fork_with_pipes
-    if pipe_stdout
-      stdout_read, stdout_write = IO.pipe
-    else
-      stdout_read = nil
-      stdout_write = nil
-    end
+    stdout_read, stdout_write = get_pipe(pipe_stdout)
     pid = Process.fork do
       set_stdout_inchild(stdout_read, stdout_write)
       yield

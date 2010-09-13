@@ -102,7 +102,7 @@ class Subprocess
   def set_stdout_inchild(read_end, write_end)
     if pipe_stdout
       read_end.close
-      $stdout = write_end
+      $stdout.reopen(write_end)
     elsif redirect_stdout
       $stdout.reopen(@opts[:stdout])
     end

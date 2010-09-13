@@ -16,6 +16,7 @@
 # It aims to be similar to Python's subprocess module, wherever this is also
 # ruby-like
 class Subprocess
+  PIPE = :Subprocess_PIPE
   # the process id of the child
   attr_reader :pid
   # set to the Process::Status of the child when wait is called
@@ -24,6 +25,8 @@ class Subprocess
   attr_reader :args
   # the options passed
   attr_reader :opts
+  # the stdout stream if the option :stdout is given as PIPE
+  attr_reader :stdout
 
   # Arguments:
   # *args*:: The argument list to run, including the program path at position 0.
@@ -38,15 +41,26 @@ class Subprocess
   # *:env*:: If not nil, the child's environment is _replaced_ with the
   #          environment specified in the hash you provide, just before
   #          calling the preexec proc.
+  # *:stdout*:: Specifies the child's standard output file handle.
+  #             If nil (the default), then the child's standard output remains
+  #             the same as the caller (your program).
+  #             An open file object or file descriptor (positive integer)
+  #             will cause the child's standard output to be redirected to
+  #             that file.
+  #             If Subprocess::PIPE, then a new pipe file object will be opened
+  #             accessible as stdout, for you to read data from.
   def initialize(args, opts={})
     # --
     @opts = {
       # These are the default options
       :cwd => nil,
       :preexec => nil,
+      :env => nil,
+      :stdout => nil,
     }.merge!(opts)   # Merge passed in options into the defaults
     @status = nil
     @args = args
+    @stdout = nil
     @pid = start_child()
     # ++
   end
@@ -61,17 +75,33 @@ class Subprocess
   end
 
 
+  private
+  def pipe_stdout
+    return (! @opts[:stdout].nil?) && (@opts[:stdout] == Subprocess::PIPE)
+  end
+
   # Start the child process.
   # Needs @opts and @args to have been defined before it is run
   private
   def start_child
+    if pipe_stdout
+      read_end, write_end = IO.pipe
+    end
     pid = Process.fork do
+      if pipe_stdout
+        read_end.close
+        $stdout = write_end
+      end
       opt_chdir do |path|
         opt_env
         opt_preexec path
         exec *@args
       end
     end
+    if pipe_stdout
+      write_end.close
+    end
+    @stdout = read_end
     return pid
   end
 
@@ -123,4 +153,12 @@ if $PROGRAM_NAME == __FILE__
                      :preexec => proc { |path| puts "$HOME = '#{ENV['HOME']}'" }
                      )
   status = child.wait
+  puts "Redirecting stdout to a pipe."
+  child = Subprocess.new(['true'],
+                         :preexec => proc { |path| puts "Hello" },
+                         :stdout => Subprocess::PIPE
+                         )
+  output = child.stdout.read
+  child.wait
+  print "Output: #{output}"
 end

@@ -44,9 +44,8 @@ class Subprocess
   # *:stdout*:: Specifies the child's standard output file handle.
   #             If nil (the default), then the child's standard output remains
   #             the same as the caller (your program).
-  #             An open file object or file descriptor (positive integer)
-  #             will cause the child's standard output to be redirected to
-  #             that file.
+  #             An open IO will cause the child's standard output to be
+  #             redirected to that file.
   #             If Subprocess::PIPE, then a new pipe file object will be opened
   #             accessible as stdout, for you to read data from.
   def initialize(args, opts={})
@@ -82,7 +81,7 @@ class Subprocess
 
   private
   def redirect_stdout
-    return @opts[:stdout].is_a?(Fixnum)
+    return @opts[:stdout].is_a?(IO)
   end
 
   private
@@ -90,6 +89,8 @@ class Subprocess
     if pipe_stdout
       read_end.close
       $stdout = write_end
+    elsif redirect_stdout
+      $stdout.reopen(@opts[:stdout])
     end
   end
 
@@ -185,4 +186,14 @@ if $PROGRAM_NAME == __FILE__
   output = child.stdout.read
   child.wait
   print "Output: #{output}"
+  File::open("output.txt", "wb") do |outfile|
+    child = Subprocess.new(['ls'],
+                           :preexec => proc { |path| puts "Hello" },
+                           :stdout => outfile
+                           )
+    child.wait
+  end
+  File::open("output.txt", "rb") do |infile|
+    print "output.txt: #{infile.read}"
+  end
 end

@@ -125,6 +125,13 @@ class Subprocess
   def setup_stream_inparent(stream_id, parent_end, child_end)
     if must_pipe(stream_id)
       child_end.close
+      if stream_id == :stdin
+        @stdin = parent_end
+      elsif stream_id == :stdout
+        @stdout = parent_end
+      elsif stream_id == :stderr
+        @stderr = parent_end
+      end
     end
   end
 
@@ -137,7 +144,7 @@ class Subprocess
     end
   end
 
-  # Fork, creating pipes.  => pid, child_stdout, child_stdin
+  # Fork, creating pipes.  => pid
   #
   # The block is executed in the child process with stdout set as appropriate.
   private
@@ -151,22 +158,20 @@ class Subprocess
     end
     setup_stream_inparent(:stdout, stdout_read, stdout_write)
     setup_stream_inparent(:stdin, stdin_write, stdin_read)
-    return pid, stdout_read, stdin_write
+    return pid
   end
 
   # Start the child process.
   # Needs @opts and @args to have been defined before it is run
   private
   def start_child
-    pid, child_stdout, child_stdin = fork_with_pipes do
+    pid = fork_with_pipes do
       opt_chdir do |path|
         opt_env
         opt_preexec path
         exec *@args
       end
     end
-    @stdout = child_stdout
-    @stdin = child_stdin
     return pid
   end
 

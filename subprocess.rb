@@ -50,6 +50,13 @@ class Subprocess
   #             redirected to that file.
   #             If Subprocess::PIPE, then a new pipe file object will be opened
   #             accessible as stdout, for you to read data from.
+  # *:stdin*:: Specifies the child's input file handle.
+  #            If nil (the default) then the child's standard input remains the
+  #            same as the caller.
+  #            An open IO will cause the child's standard input to be taken
+  #            from that file.
+  #            If Subprocess::PIPE, then a new pipe object will be opened
+  #            accessible as stdin, for you to write data to.
   def initialize(args, opts={})
     # --
     @opts = {

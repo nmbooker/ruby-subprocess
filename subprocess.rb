@@ -27,15 +27,15 @@ class Subprocess
   # *opts*:: A hash of options modifying the default behaviour.
   #
   # Options (the opts argument):
-  # *:chdir*:: Change directory to the given path after forking.
-  #            If nil (the default), no directory change is performed.
+  # *:cwd*:: Change directory to the given path after forking.
+  #          If nil (the default), no directory change is performed.
   # *:preexec*:: If set to a proc, that proc will be executed in the
   #              child process just before exec is called.
   def initialize(args, opts={})
     # --
     @opts = {
       # These are the default options
-      :chdir => nil,
+      :cwd => nil,
       :preexec => nil,
     }.merge!(opts)   # Merge passed in options into the defaults
     @status = nil
@@ -71,10 +71,10 @@ class Subprocess
   # _cwd_ is the working directory.
   private
   def opt_chdir            # :yields: cwd
-    if @opts[:chdir].nil?
+    if @opts[:cwd].nil?
       yield Dir.getwd
     else
-      Dir.chdir(opts[:chdir]) do |path|
+      Dir.chdir(opts[:cwd]) do |path|
         yield path
       end
     end
@@ -99,6 +99,6 @@ if $PROGRAM_NAME == __FILE__
   puts "ls exited with status #{status.exitstatus}"
   puts ""
   puts "Testing ls in the doc directory..."
-  child = Subprocess.new(['ls', '-l'], :chdir => 'doc')
+  child = Subprocess.new(['ls', '-l'], :cwd => 'doc')
   status = child.wait
 end

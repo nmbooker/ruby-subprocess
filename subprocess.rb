@@ -1,3 +1,8 @@
+#!/usr/bin/env ruby
+
+# Defines Subprocess, which provides a consistent API for calling, waiting on
+# and interacting with other programs.
+#
 # Author::      Nick Booker (mailto:NMBooker@googlemail.com)
 # Copyright::   Copyright (c) 2010 Nicholas Booker
 # License::     Not yet decided.  Assume no license until I decide.
@@ -7,7 +12,7 @@
 # It aims to be similar to Python's subprocess module, wherever this is also
 # ruby-like
 class Subprocess
-  # the process id of the child, or nil if no child was spawned
+  # the process id of the child
   attr_reader :pid
   # set to the status of the child when wait is called
   attr_reader :status
@@ -23,10 +28,9 @@ class Subprocess
     end      
   end
 
+  # Wait for the child process to exit.
+  # Returns and sets @status to a Status
   def wait
-    if @pid.nil?
-      throw NoChildException.new
-    end
     pid, status = Process.wait2(@pid)
     @status = status
     return status

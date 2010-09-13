@@ -29,6 +29,8 @@ class Subprocess
   attr_reader :stdout
   # the stdin stream if the options :stdin is given as PIPE
   attr_reader :stdin
+  # the stderr stream if the option :stderr is given as PIPE
+  attr_reader :stderr
 
   # Arguments:
   # *args*:: The argument list to run, including the program path at position 0.
@@ -57,6 +59,13 @@ class Subprocess
   #            from that file.
   #            If Subprocess::PIPE, then a new pipe object will be opened
   #            accessible as stdin, for you to write data to.
+  # *:stderr*:: Specifies the child's standard error file handle.
+  #             If nil (the default), then the child's standard error remains
+  #             the same as the caller (your program).
+  #             An open IO will cause the child's standard error to be
+  #             redirected to that file.
+  #             If Subprocess::PIPE, then a new pipe file object will be opened
+  #             accessible as stderr, for you to read data from.
   def initialize(args, opts={})
     # --
     @opts = {
@@ -65,6 +74,7 @@ class Subprocess
       :preexec => nil,
       :env => nil,
       :stdout => nil,
+      :stderr => nil,
     }.merge!(opts)   # Merge passed in options into the defaults
     @status = nil
     @args = args
@@ -151,13 +161,16 @@ class Subprocess
   def fork_with_pipes
     stdout_read, stdout_write = get_pipe(must_pipe(:stdout))
     stdin_read, stdin_write = get_pipe(must_pipe(:stdin))
+    stderr_read, stderr_write = get_pipe(must_pipe(:stderr))
     pid = Process.fork do
       setup_stream_inchild(:stdout, stdout_write, stdout_read)
       setup_stream_inchild(:stdin, stdin_read, stdin_write)
+      setup_stream_inchild(:stderr, stderr_write, stderr_read)
       yield
     end
     setup_stream_inparent(:stdout, stdout_read, stdout_write)
     setup_stream_inparent(:stdin, stdin_write, stdin_read)
+    setup_stream_inparent(:stderr, stderr_read, stderr_write)
     return pid
   end
 
@@ -259,4 +272,23 @@ if $PROGRAM_NAME == __FILE__
                            )
     child.wait
   end
+
+  puts ""
+  puts "Running bad ls command while redirecting stderr to stderr.txt..."
+  File::open("stderr.txt", "wb") do |errfile|
+    child = Subprocess.new(['ls', '/fiddlesticks'],
+                           :stderr => errfile
+                           )
+    child.wait
+  end
+  puts "stderr.txt: #{File::open("stderr.txt").read}"
+
+  puts ""
+  puts "Running bad ls command while piping stderr..."
+  child = Subprocess.new(['ls', '/fiddlesticks'],
+                         :stderr => Subprocess::PIPE
+                         )
+  errors = child.stderr.read
+  child.wait
+  puts "errors: #{errors}"
 end

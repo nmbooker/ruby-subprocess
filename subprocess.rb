@@ -159,18 +159,18 @@ class Subprocess
   # The block is executed in the child process with stdout set as appropriate.
   private
   def fork_with_pipes
-    stdout_read, stdout_write = get_pipe(must_pipe(:stdout))
-    stdin_read, stdin_write = get_pipe(must_pipe(:stdin))
-    stderr_read, stderr_write = get_pipe(must_pipe(:stderr))
+    stdout_parent, stdout_child = get_pipe(must_pipe(:stdout))
+    stdin_child, stdin_parent = get_pipe(must_pipe(:stdin))
+    stderr_parent, stderr_child = get_pipe(must_pipe(:stderr))
     pid = Process.fork do
-      setup_stream_inchild(:stdout, stdout_write, stdout_read)
-      setup_stream_inchild(:stdin, stdin_read, stdin_write)
-      setup_stream_inchild(:stderr, stderr_write, stderr_read)
+      setup_stream_inchild(:stdout, stdout_child, stdout_parent)
+      setup_stream_inchild(:stdin, stdin_child, stdin_parent)
+      setup_stream_inchild(:stderr, stderr_child, stderr_parent)
       yield
     end
-    setup_stream_inparent(:stdout, stdout_read, stdout_write)
-    setup_stream_inparent(:stdin, stdin_write, stdin_read)
-    setup_stream_inparent(:stderr, stderr_read, stderr_write)
+    setup_stream_inparent(:stdout, stdout_parent, stdout_child)
+    setup_stream_inparent(:stdin, stdin_parent, stdin_child)
+    setup_stream_inparent(:stderr, stderr_parent, stderr_child)
     return pid
   end
 

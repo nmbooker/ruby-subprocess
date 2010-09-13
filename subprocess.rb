@@ -117,6 +117,17 @@ class Subprocess
     return stream
   end
 
+  # Specifies whether the given stream is written to by the child.
+  private
+  def written_by_child?(stream_id)
+    result = case stream_id
+             when :stdin then false
+             when :stdout then true
+             when :stderr then true
+             else nil
+    end
+    return result
+  end
 
   # Called inside the child to set up the streams.
   private
@@ -145,10 +156,17 @@ class Subprocess
     end
   end
 
+  # If a pipe is required, returns the array [parent_end, child_end].
+  # If no pipe is required, returns [nil, nil].
   private
-  def get_pipe(needs_pipe)
-    if needs_pipe
-      return IO.pipe
+  def get_pipe(stream_id)
+    if must_pipe(stream_id)
+      read_end, write_end = IO.pipe
+      if written_by_child?(stream_id)
+        return read_end, write_end
+      else
+        return write_end, read_end
+      end
     else
       return nil, nil
     end
@@ -159,9 +177,9 @@ class Subprocess
   # The block is executed in the child process with stdout set as appropriate.
   private
   def fork_with_pipes
-    stdout_parent, stdout_child = get_pipe(must_pipe(:stdout))
-    stdin_child, stdin_parent = get_pipe(must_pipe(:stdin))
-    stderr_parent, stderr_child = get_pipe(must_pipe(:stderr))
+    stdout_parent, stdout_child = get_pipe(:stdout)
+    stdin_parent, stdin_child = get_pipe(:stdin)
+    stderr_parent, stderr_child = get_pipe(:stderr)
     pid = Process.fork do
       setup_stream_inchild(:stdout, stdout_child, stdout_parent)
       setup_stream_inchild(:stdin, stdin_child, stdin_parent)

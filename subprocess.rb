@@ -89,14 +89,11 @@ class Subprocess
     return @opts[identifier] == Subprocess::PIPE
   end
 
+  # Return whether we're redirecting a particular stream
+  # *identifier*:: One of :stdout, :stdin or :stderr
   private
-  def redirect_stdout
-    return @opts[:stdout].is_a?(IO)
-  end
-
-  private
-  def redirect_stdin
-    return @opts[:stdin].is_a?(IO)
+  def must_redirect(identifier)
+    return @opts[identifier].is_a?(IO)
   end
 
   private
@@ -104,7 +101,7 @@ class Subprocess
     if must_pipe(:stdout)
       read_end.close
       $stdout.reopen(write_end)
-    elsif redirect_stdout
+    elsif must_redirect(:stdout)
       $stdout.reopen(@opts[:stdout])
     end
   end
@@ -114,7 +111,7 @@ class Subprocess
     if must_pipe(:stdin)
       write_end.close
       $stdin.reopen(read_end)
-    elsif redirect_stdin
+    elsif must_redirect(:stdin)
       $stdin.reopen(@opts[:stdin])
     end
   end

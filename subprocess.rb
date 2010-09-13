@@ -82,7 +82,6 @@ class Subprocess
     return statusobj
   end
 
-
   private
   def pipe_stdout
     return @opts[:stdout] == Subprocess::PIPE

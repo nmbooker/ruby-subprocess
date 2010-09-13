@@ -85,12 +85,12 @@ class Subprocess
   private
   def start_child
     if pipe_stdout
-      read_end, write_end = IO.pipe
+      stdout_read, stdout_write = IO.pipe
     end
     pid = Process.fork do
       if pipe_stdout
-        read_end.close
-        $stdout = write_end
+        stdout_read.close
+        $stdout = stdout_write
       end
       opt_chdir do |path|
         opt_env
@@ -99,9 +99,9 @@ class Subprocess
       end
     end
     if pipe_stdout
-      write_end.close
+      stdout_write.close
     end
-    @stdout = read_end
+    @stdout = stdout_read
     return pid
   end
 

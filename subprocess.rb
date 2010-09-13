@@ -22,11 +22,19 @@ class Subprocess
   # Arguments:
   # args:: The argument list to run, including the program path at position 0.
   #        A list of strings.
-  def initialize(args)
+  # opts:: A hash of options modifying the default behaviour.
+  def initialize(args, opts={})
     @status = nil
     @args = args
+    @opts = opts
     @pid = Process.fork do
-      exec(*args)
+      if opts.has_key?(:chdir)
+        Dir.chdir(opts[:chdir]) do
+          exec *args
+        end
+      else
+        exec(*args)
+      end
     end      
   end
 
@@ -46,4 +54,8 @@ if $PROGRAM_NAME == __FILE__
   status = child.wait
   puts "ls had pid: #{child.pid}"
   puts "ls exited with status #{status.exitstatus}"
+  puts ""
+  puts "Testing ls in the doc directory..."
+  child = Subprocess.new(['ls', '-l'], :chdir => 'doc')
+  status = child.wait
 end

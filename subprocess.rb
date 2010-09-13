@@ -53,7 +53,7 @@ class Subprocess
 
   # Change directory if requested in opts, and execute the block.
   # _cwd_ is the working directory.
-  protected
+  private
   def opt_chdir            # :yields: cwd
     if @opts[:chdir].nil?
       yield Dir.getwd

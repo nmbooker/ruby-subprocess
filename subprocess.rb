@@ -27,28 +27,41 @@ class Subprocess
   # *opts*:: A hash of options modifying the default behaviour.
   #
   # Options (the opts argument):
-  # :*chdir*:: Change directory to the given path after forking.
+  # *:chdir*:: Change directory to the given path after forking.
   #            If nil (the default), no directory change is performed.
+  # *:preexec*:: If set to a proc, that proc will be executed in the
+  #              child process just before exec is called.
   def initialize(args, opts={})
     @opts = {
       :chdir => nil,
+      :preexec => nil,
     }.merge!(opts)
     @status = nil
     @args = args
-    @pid = Process.fork do
-      opt_chdir do |path|
-        exec *args
-      end
-    end      
+    @pid = start_child()
   end
 
   # Wait for the child process to exit.
   # * Sets status to a Process::Status object.
   # * Returns the same Process::Status object.
   def wait
-    pid, status = Process.wait2(@pid)
-    @status = status
-    return status
+    pid, statusobj = Process.wait2(@pid)
+    @status = statusobj
+    return statusobj
+  end
+
+
+  # Start the child process.
+  # Needs @opts and @args to have been defined before it is run
+  private
+  def start_child
+    pid = Process.fork do
+      opt_chdir do |path|
+        opt_preexec path
+        exec *@args
+      end
+    end
+    return pid
   end
 
   # Change directory if requested in opts, and execute the block.
@@ -63,11 +76,21 @@ class Subprocess
       end
     end
   end
+
+  # Optionally execute the preexec proc
+  private
+  def opt_preexec(path)
+    if not @opts[:preexec].nil?
+      @opts[:preexec].call(path)
+    end
+  end
 end
 
 if $PROGRAM_NAME == __FILE__
   puts "Testing ls..."
-  child = Subprocess.new(['ls', '-l'])
+  puts "We also have a preexec command to show the child's pid"
+  showpid = proc { |path| puts "Child's pid is: #{Process.pid}" }
+  child = Subprocess.new(['ls', '-l'], :preexec => showpid)
   status = child.wait
   puts "ls had pid: #{child.pid}"
   puts "ls exited with status #{status.exitstatus}"

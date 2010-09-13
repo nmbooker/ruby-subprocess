@@ -74,6 +74,7 @@ class Subprocess
       :preexec => nil,
       :env => nil,
       :stdout => nil,
+      :stdin => nil,
       :stderr => nil,
     }.merge!(opts)   # Merge passed in options into the defaults
     @status = nil

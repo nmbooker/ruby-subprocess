@@ -32,13 +32,16 @@ class Subprocess
   # *:preexec*:: If set to a proc, that proc will be executed in the
   #              child process just before exec is called.
   def initialize(args, opts={})
+    # --
     @opts = {
+      # These are the default options
       :chdir => nil,
       :preexec => nil,
-    }.merge!(opts)
+    }.merge!(opts)   # Merge passed in options into the defaults
     @status = nil
     @args = args
     @pid = start_child()
+    # ++
   end
 
   # Wait for the child process to exit.

@@ -80,7 +80,7 @@ class Subprocess
     return (! @opts[:stdout].nil?) && (@opts[:stdout] == Subprocess::PIPE)
   end
 
-  # Fork, creating pipes.  => pid, stdout
+  # Fork, creating pipes.  => pid, child_stdout
   #
   # The block is executed in the child process with stdout set as appropriate.
   private
@@ -108,14 +108,14 @@ class Subprocess
   # Needs @opts and @args to have been defined before it is run
   private
   def start_child
-    pid, stdout_read = fork_with_pipes do
+    pid, child_stdout = fork_with_pipes do
       opt_chdir do |path|
         opt_env
         opt_preexec path
         exec *@args
       end
     end
-    @stdout = stdout_read
+    @stdout = child_stdout
     return pid
   end
 

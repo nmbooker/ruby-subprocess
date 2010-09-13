@@ -80,26 +80,40 @@ class Subprocess
     return (! @opts[:stdout].nil?) && (@opts[:stdout] == Subprocess::PIPE)
   end
 
-  # Start the child process.
-  # Needs @opts and @args to have been defined before it is run
+  # Fork, creating pipes.  => pid, stdout
+  #
+  # The block is executed in the child process with stdout set as appropriate.
   private
-  def start_child
+  def fork_with_pipes
     if pipe_stdout
       stdout_read, stdout_write = IO.pipe
+    else
+      stdout_read = nil
+      stdout_write = nil
     end
     pid = Process.fork do
       if pipe_stdout
         stdout_read.close
         $stdout = stdout_write
       end
+      yield
+    end
+    if pipe_stdout
+      stdout_write.close
+    end
+    return pid, stdout_read
+  end
+
+  # Start the child process.
+  # Needs @opts and @args to have been defined before it is run
+  private
+  def start_child
+    pid, stdout_read = fork_with_pipes do
       opt_chdir do |path|
         opt_env
         opt_preexec path
         exec *@args
       end
-    end
-    if pipe_stdout
-      stdout_write.close
     end
     @stdout = stdout_read
     return pid

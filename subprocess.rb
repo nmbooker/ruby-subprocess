@@ -99,6 +99,11 @@ class Subprocess
   end
 
   private
+  def redirect_stdin
+    return @opts[:stdin].is_a?(IO)
+  end
+
+  private
   def set_stdout_inchild(read_end, write_end)
     if pipe_stdout
       read_end.close
@@ -113,6 +118,8 @@ class Subprocess
     if pipe_stdin
       write_end.close
       $stdin.reopen(read_end)
+    elsif redirect_stdin
+      $stdin.reopen(@opts[:stdin])
     end
   end
 
@@ -237,4 +244,13 @@ if $PROGRAM_NAME == __FILE__
   child.stdin.write("hello world\n")
   child.stdin.close
   child.wait
+
+  puts ""
+  puts "Grepping for anything containing 'rb' in output.txt..."
+  File::open("output.txt", "rb") do |infile|
+    child = Subprocess.new(['grep', 'rb'],
+                           :stdin => infile
+                           )
+    child.wait
+  end
 end

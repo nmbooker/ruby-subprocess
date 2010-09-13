@@ -107,6 +107,8 @@ class Subprocess
     return stream
   end
 
+
+  # Called inside the child to set up the streams.
   private
   def setup_stream_inchild(stream_id, child_end, parent_end)
     stream = select_child_stream(stream_id)

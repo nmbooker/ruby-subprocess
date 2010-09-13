@@ -18,6 +18,8 @@ class Subprocess
   attr_reader :status
   # the argument list originally passed
   attr_reader :args
+  # the options passed
+  attr_reader :opts
 
   # Arguments:
   # args:: The argument list to run, including the program path at position 0.

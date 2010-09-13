@@ -22,13 +22,13 @@ class Subprocess
   attr_reader :opts
 
   # Arguments:
-  # args:: The argument list to run, including the program path at position 0.
-  #        A list of strings.
-  # opts:: A hash of options modifying the default behaviour.
+  # *args*:: The argument list to run, including the program path at position 0.
+  #          A list of strings.
+  # *opts*:: A hash of options modifying the default behaviour.
   #
   # Options (the opts argument):
-  # :chdir:: Change directory to the given path after forking.
-  #          If nil (the default), no directory change is performed.
+  # :*chdir*:: Change directory to the given path after forking.
+  #            If nil (the default), no directory change is performed.
   def initialize(args, opts={})
     @opts = {
       :chdir => nil,
@@ -51,10 +51,10 @@ class Subprocess
     return status
   end
 
-  # Change directory if requested in opts, and execute the block
-  # path is passed into the block, and is the present working directory
+  # Change directory if requested in opts, and execute the block.
+  # _cwd_ is the working directory.
   protected
-  def opt_chdir
+  def opt_chdir            # :yields: cwd
     if @opts[:chdir].nil?
       yield Dir.getwd
     else

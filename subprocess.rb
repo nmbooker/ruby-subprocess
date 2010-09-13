@@ -26,16 +26,18 @@ class Subprocess
   #        A list of strings.
   # opts:: A hash of options modifying the default behaviour.
   def initialize(args, opts={})
+    @opts = {
+      :chdir => nil,
+    }.merge!(opts)
     @status = nil
     @args = args
-    @opts = opts
     @pid = Process.fork do
-      if opts.has_key?(:chdir)
+      if opts[:chdir].nil?
+        exec *args
+      else
         Dir.chdir(opts[:chdir]) do
           exec *args
         end
-      else
-        exec(*args)
       end
     end      
   end

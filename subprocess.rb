@@ -14,6 +14,7 @@ class Subprocess
   # the argument list originally passed
   attr_reader :args
 
+  # args: The argument list, including the program path at position 0
   def initialize(args)
     @status = nil
     @args = args

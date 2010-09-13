@@ -82,19 +82,16 @@ class Subprocess
     return statusobj
   end
 
+  # Return whether we're piping a particular stream
+  # *identifier*:: One of :stdout, :stdin or :stderr
   private
-  def pipe_stdout
-    return @opts[:stdout] == Subprocess::PIPE
+  def must_pipe(identifier)
+    return @opts[identifier] == Subprocess::PIPE
   end
 
   private
   def redirect_stdout
     return @opts[:stdout].is_a?(IO)
-  end
-
-  private
-  def pipe_stdin
-    return @opts[:stdin] == Subprocess::PIPE
   end
 
   private
@@ -104,7 +101,7 @@ class Subprocess
 
   private
   def set_stdout_inchild(read_end, write_end)
-    if pipe_stdout
+    if must_pipe(:stdout)
       read_end.close
       $stdout.reopen(write_end)
     elsif redirect_stdout
@@ -114,7 +111,7 @@ class Subprocess
 
   private
   def set_stdin_inchild(read_end, write_end)
-    if pipe_stdin
+    if must_pipe(:stdin)
       write_end.close
       $stdin.reopen(read_end)
     elsif redirect_stdin
@@ -136,17 +133,17 @@ class Subprocess
   # The block is executed in the child process with stdout set as appropriate.
   private
   def fork_with_pipes
-    stdout_read, stdout_write = get_pipe(pipe_stdout)
-    stdin_read, stdin_write = get_pipe(pipe_stdin)
+    stdout_read, stdout_write = get_pipe(must_pipe(:stdout))
+    stdin_read, stdin_write = get_pipe(must_pipe(:stdin))
     pid = Process.fork do
       set_stdout_inchild(stdout_read, stdout_write)
       set_stdin_inchild(stdin_read, stdin_write)
       yield
     end
-    if pipe_stdout
+    if must_pipe(:stdout)
       stdout_write.close
     end
-    if pipe_stdin
+    if must_pipe(:stdin)
       stdin_read.close
     end
     return pid, stdout_read, stdin_write

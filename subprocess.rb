@@ -120,6 +120,14 @@ class Subprocess
     end
   end
 
+  # Called inside the parent after forking to set up the stream.
+  private
+  def setup_stream_inparent(stream_id, parent_end, child_end)
+    if must_pipe(stream_id)
+      child_end.close
+    end
+  end
+
   private
   def get_pipe(needs_pipe)
     if needs_pipe
@@ -141,12 +149,8 @@ class Subprocess
       setup_stream_inchild(:stdin, stdin_read, stdin_write)
       yield
     end
-    if must_pipe(:stdout)
-      stdout_write.close
-    end
-    if must_pipe(:stdin)
-      stdin_read.close
-    end
+    setup_stream_inparent(:stdout, stdout_read, stdout_write)
+    setup_stream_inparent(:stdin, stdin_write, stdin_read)
     return pid, stdout_read, stdin_write
   end
 

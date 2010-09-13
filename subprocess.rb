@@ -131,7 +131,7 @@ class Subprocess
 
   # Called inside the child to set up the streams.
   private
-  def setup_stream_inchild(stream_id, child_end, parent_end)
+  def setup_stream_inchild(stream_id, parent_end, child_end)
     stream = select_child_stream(stream_id)
     if must_pipe(stream_id)
       parent_end.close
@@ -181,9 +181,9 @@ class Subprocess
     stdin_parent, stdin_child = get_pipe(:stdin)
     stderr_parent, stderr_child = get_pipe(:stderr)
     pid = Process.fork do
-      setup_stream_inchild(:stdout, stdout_child, stdout_parent)
-      setup_stream_inchild(:stdin, stdin_child, stdin_parent)
-      setup_stream_inchild(:stderr, stderr_child, stderr_parent)
+      setup_stream_inchild(:stdout, stdout_parent, stdout_child)
+      setup_stream_inchild(:stdin, stdin_parent, stdin_child)
+      setup_stream_inchild(:stderr, stderr_parent, stderr_child)
       yield
     end
     setup_stream_inparent(:stdout, stdout_parent, stdout_child)

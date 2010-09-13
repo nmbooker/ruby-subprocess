@@ -93,6 +93,14 @@ class Subprocess
     return statusobj
   end
 
+  # Sends the given signal to the child.
+  # _signal_ may be an integer signal number or a POSIX signal name
+  # (either with or without a SIG prefix).
+  # Not all signals are available on all platforms.
+  def send_signal(signal)
+    Process.kill(signal, @pid)
+  end
+
   # Return whether we're piping a particular stream
   # *identifier*:: One of :stdout, :stdin or :stderr
   private
@@ -310,4 +318,22 @@ if $PROGRAM_NAME == __FILE__
   errors = child.stderr.read
   child.wait
   puts "errors: #{errors}"
+
+  puts ""
+  puts "Testing signal -- launching something that catches HUP..."
+  preexec = proc {
+    Signal.trap("HUP") {
+      puts "CHILD: I'm PID #{Process.pid}, and I got HUP.  I'll exit now."
+      exit
+    }
+    puts "CHILD: Sleeping for 10 seconds..."
+    sleep 10
+  }
+  child = Subprocess.new(["true"],
+                         :preexec => preexec)
+  puts "PARENT: Sleeping for 2 seconds"
+  sleep 2
+  puts "PARENT: Sending HUP to the child (PID: #{child.pid})..."
+  child.send_signal("HUP")
+  child.wait
 end

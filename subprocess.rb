@@ -27,6 +27,8 @@ class Subprocess
   attr_reader :opts
   # the stdout stream if the option :stdout is given as PIPE
   attr_reader :stdout
+  # the stdin stream if the options :stdin is given as PIPE
+  attr_reader :stdin
 
   # Arguments:
   # *args*:: The argument list to run, including the program path at position 0.
@@ -85,12 +87,25 @@ class Subprocess
   end
 
   private
+  def pipe_stdin
+    return @opts[:stdin] == Subprocess::PIPE
+  end
+
+  private
   def set_stdout_inchild(read_end, write_end)
     if pipe_stdout
       read_end.close
       $stdout = write_end
     elsif redirect_stdout
       $stdout.reopen(@opts[:stdout])
+    end
+  end
+
+  private
+  def set_stdin_inchild(read_end, write_end)
+    if pipe_stdin
+      write_end.close
+      $stdin.reopen(read_end)
     end
   end
 
@@ -103,27 +118,32 @@ class Subprocess
     end
   end
 
-  # Fork, creating pipes.  => pid, child_stdout
+  # Fork, creating pipes.  => pid, child_stdout, child_stdin
   #
   # The block is executed in the child process with stdout set as appropriate.
   private
   def fork_with_pipes
     stdout_read, stdout_write = get_pipe(pipe_stdout)
+    stdin_read, stdin_write = get_pipe(pipe_stdin)
     pid = Process.fork do
       set_stdout_inchild(stdout_read, stdout_write)
+      set_stdin_inchild(stdin_read, stdin_write)
       yield
     end
     if pipe_stdout
       stdout_write.close
     end
-    return pid, stdout_read
+    if pipe_stdin
+      stdin_read.close
+    end
+    return pid, stdout_read, stdin_write
   end
 
   # Start the child process.
   # Needs @opts and @args to have been defined before it is run
   private
   def start_child
-    pid, child_stdout = fork_with_pipes do
+    pid, child_stdout, child_stdin = fork_with_pipes do
       opt_chdir do |path|
         opt_env
         opt_preexec path
@@ -131,6 +151,7 @@ class Subprocess
       end
     end
     @stdout = child_stdout
+    @stdin = child_stdin
     return pid
   end
 
@@ -200,4 +221,13 @@ if $PROGRAM_NAME == __FILE__
   File::open("output.txt", "rb") do |infile|
     print "output.txt: #{infile.read}"
   end
+
+  child = Subprocess.new(['grep', 'hello'],
+                         :stdin => Subprocess::PIPE
+                         )
+  child.stdin.write("Hello\n")
+  child.stdin.write("hello\n")
+  child.stdin.write("hello world\n")
+  child.stdin.close
+  child.wait
 end

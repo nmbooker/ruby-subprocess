@@ -77,7 +77,20 @@ class Subprocess
 
   private
   def pipe_stdout
-    return (! @opts[:stdout].nil?) && (@opts[:stdout] == Subprocess::PIPE)
+    return @opts[:stdout] == Subprocess::PIPE
+  end
+
+  private
+  def redirect_stdout
+    return @opts[:stdout].is_a?(Fixnum)
+  end
+
+  private
+  def set_stdout_inchild(read_end, write_end)
+    if pipe_stdout
+      read_end.close
+      $stdout = write_end
+    end
   end
 
   # Fork, creating pipes.  => pid, child_stdout
@@ -92,10 +105,7 @@ class Subprocess
       stdout_write = nil
     end
     pid = Process.fork do
-      if pipe_stdout
-        stdout_read.close
-        $stdout = stdout_write
-      end
+      set_stdout_inchild(stdout_read, stdout_write)
       yield
     end
     if pipe_stdout

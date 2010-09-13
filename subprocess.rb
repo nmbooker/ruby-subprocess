@@ -3,6 +3,10 @@
 # Defines Subprocess, which provides a consistent API for calling, waiting on
 # and interacting with other programs.
 #
+# This is unlikely to work under non-Unix platforms, and the tests at the
+# end of the script definitely won't.
+# Support for Windows would be a welcome addition -- please contribute.
+#
 # Author::      Nick Booker (mailto:NMBooker@googlemail.com)
 # Copyright::   Copyright (c) 2010 Nicholas Booker
 # License::     Not yet decided.  Assume no license until I decide.
@@ -31,6 +35,9 @@ class Subprocess
   #          If nil (the default), no directory change is performed.
   # *:preexec*:: If set to a proc, that proc will be executed in the
   #              child process just before exec is called.
+  # *:env*:: If not nil, the child's environment is _replaced_ with the
+  #          environment specified in the hash you provide, just before
+  #          calling the preexec proc.
   def initialize(args, opts={})
     # --
     @opts = {
@@ -60,6 +67,7 @@ class Subprocess
   def start_child
     pid = Process.fork do
       opt_chdir do |path|
+        opt_env
         opt_preexec path
         exec *@args
       end
@@ -87,6 +95,14 @@ class Subprocess
       @opts[:preexec].call(path)
     end
   end
+
+  # Optionally replace the environment
+  private
+  def opt_env
+    if not @opts[:env].nil?
+      ENV.replace(@opts[:env])
+    end
+  end
 end
 
 if $PROGRAM_NAME == __FILE__
@@ -100,5 +116,11 @@ if $PROGRAM_NAME == __FILE__
   puts ""
   puts "Testing ls in the doc directory..."
   child = Subprocess.new(['ls', '-l'], :cwd => 'doc')
+  status = child.wait
+  puts "Testing overriding the environment..."
+  child = Subprocess.new(['true'],
+                     :env => {'HOME' => 'Something'},
+                     :preexec => proc { |path| puts "$HOME = '#{ENV['HOME']}'" }
+                     )
   status = child.wait
 end

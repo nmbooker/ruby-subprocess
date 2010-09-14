@@ -102,6 +102,18 @@ class Subprocess
     Process.kill(signal, @pid)
   end
 
+  # Call the given command, wait to complete and return a Process::Status.
+  #
+  # The arguments are the same as for new
+  #
+  # <b>Warning:</b> Like wait, this will deadlock when using
+  # :stdout=>PIPE and/or :stderr=>PIPE and the child process generates enough
+  # output to a pipe such that it blocks waiting for the OS pipe buffer to
+  # accept more data.
+  def Subprocess::call(args, opts={})
+    return Subprocess.new(args, opts).wait
+  end
+
   # Return whether we're piping a particular stream
   # *identifier*:: One of :stdout, :stdin or :stderr
   private
@@ -337,4 +349,9 @@ if $PROGRAM_NAME == __FILE__
   puts "PARENT: Sending HUP to the child (PID: #{child.pid})..."
   child.send_signal("HUP")
   child.wait
+
+  puts ""
+  puts "Testing Subprocess::call"
+  status = Subprocess::call(["ls"])
+  puts "Exit status was: #{status.exitstatus}"
 end

@@ -17,6 +17,16 @@
 # It aims to be similar to Python's subprocess module, wherever this is also
 # ruby-like
 class Subprocess
+  class CalledProcessException < Exception
+    attr_reader :status
+    def initialize(args, status)
+      @args = args
+      @status = status
+    end
+    def to_s
+      return "Child returned non-zero exit status: #{status.exitstatus}"
+    end
+  end
   PIPE = :Subprocess_PIPE
   # the process id of the child
   attr_reader :pid
@@ -112,6 +122,20 @@ class Subprocess
   # accept more data.
   def Subprocess::call(args, opts={})
     return Subprocess.new(args, opts).wait
+  end
+
+  # Call the given command, wait to complete and raise if exit status is non-zero.
+  # If the exit status is zero, then this just returns.
+  # If the exit status is non-zero, then Subprocess::CalledProcessException
+  # is raised.
+  #
+  # <b>Warning:</b> See the warning for call().
+  def Subprocess::check_call(args, opts={})
+    status = Subprocess.new(args, opts).wait
+    if status.exitstatus != 0
+      raise CalledProcessException.new(args, status)
+    end
+    return 0
   end
 
   # Return whether we're piping a particular stream
@@ -354,4 +378,15 @@ if $PROGRAM_NAME == __FILE__
   puts "Testing Subprocess::call"
   status = Subprocess::call(["ls"])
   puts "Exit status was: #{status.exitstatus}"
+
+  puts ""
+  puts "Testing Subprocess::check_call for exit status 0"
+  Subprocess::check_call(["true"])
+  puts "Testing Subprocess::check_call for non-zero exit status"
+  begin
+    Subprocess::check_call(["false"])
+    puts "ERROR - CalledProcessException should have been raised!"
+  rescue Subprocess::CalledProcessException => exc
+    puts "#{exc.class} was raised. #{exc}"
+  end
 end

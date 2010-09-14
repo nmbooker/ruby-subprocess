@@ -9,7 +9,8 @@
 #
 # Author::      Nick Booker (mailto:NMBooker@googlemail.com)
 # Copyright::   Copyright (c) 2010 Nicholas Booker
-# License::     Not yet decided.  Assume no license until I decide.
+# License::     GNU Lesser General Public License, version 3 or above.
+#               See http://www.gnu.org/licenses/gpl.html
 
 # This class gives a consistent interface for spawning and managing child
 # processes.

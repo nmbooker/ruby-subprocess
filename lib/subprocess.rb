@@ -148,7 +148,7 @@ class Subprocess
   # Return whether we're redirecting a particular stream
   # *identifier*:: One of :stdout, :stdin or :stderr
   private
-  def must_redirect(identifier)
+  def must_redirect?(identifier)
     return @opts[identifier].is_a?(IO)
   end
 
@@ -182,7 +182,7 @@ class Subprocess
     if must_pipe?(stream_id)
       parent_end.close
       stream.reopen(child_end)
-    elsif must_redirect(stream_id)
+    elsif must_redirect?(stream_id)
       stream.reopen(@opts[stream_id])
     end
   end

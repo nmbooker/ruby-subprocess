@@ -91,7 +91,7 @@ class Subprocess
     @status = nil
     @args = args
     @stdout = nil
-    @pid = start_child()
+    start_child
     # ++
   end
 
@@ -242,14 +242,13 @@ class Subprocess
   # Needs @opts and @args to have been defined before it is run
   private
   def start_child
-    pid = fork_with_pipes do
-      opt_chdir do |path|
+    opt_chdir do |path|
+      @pid = fork_with_pipes do
         opt_env
         opt_preexec path
         exec *@args
       end
     end
-    return pid
   end
 
   # Change directory if requested in opts, and execute the block.

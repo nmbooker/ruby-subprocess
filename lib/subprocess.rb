@@ -141,7 +141,7 @@ class Subprocess
   # Return whether we're piping a particular stream
   # *identifier*:: One of :stdout, :stdin or :stderr
   private
-  def must_pipe(identifier)
+  def must_pipe?(identifier)
     return @opts[identifier] == Subprocess::PIPE
   end
 
@@ -179,7 +179,7 @@ class Subprocess
   private
   def setup_stream_inchild(stream_id, parent_end, child_end)
     stream = select_child_stream(stream_id)
-    if must_pipe(stream_id)
+    if must_pipe?(stream_id)
       parent_end.close
       stream.reopen(child_end)
     elsif must_redirect(stream_id)
@@ -190,7 +190,7 @@ class Subprocess
   # Called inside the parent after forking to set up the stream.
   private
   def setup_stream_inparent(stream_id, parent_end, child_end)
-    if must_pipe(stream_id)
+    if must_pipe?(stream_id)
       child_end.close
       if stream_id == :stdin
         @stdin = parent_end
@@ -206,7 +206,7 @@ class Subprocess
   # If no pipe is required, returns [nil, nil].
   private
   def get_pipe(stream_id)
-    if must_pipe(stream_id)
+    if must_pipe?(stream_id)
       read_end, write_end = IO.pipe
       if written_by_child?(stream_id)
         return read_end, write_end

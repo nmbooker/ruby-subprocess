@@ -3,7 +3,7 @@ task :default => [:all]
 task :all => [:doc]
 
 task :doc do
-  sh "rdoc lib/subprocess.rb"
+  sh "yardoc"
 end
 
 task :clobber do

@@ -88,6 +88,8 @@ class Subprocess
       :stdin => nil,
       :stderr => nil,
     }.merge!(opts)   # Merge passed in options into the defaults
+    @opts.each_value { |value| value.freeze }
+    @opts.freeze
     @status = nil
     @args = args
     @stdout = nil
@@ -101,6 +103,7 @@ class Subprocess
   def wait
     pid, statusobj = Process.wait2(@pid)
     @status = statusobj
+    @status.freeze
     return statusobj
   end
 

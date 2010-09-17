@@ -88,7 +88,6 @@ class Subprocess
       :stdin => nil,
       :stderr => nil,
     }.merge!(opts)   # Merge passed in options into the defaults
-    @opts.each_value { |value| value.freeze }
     @opts.freeze
     @status = nil
     @args = args

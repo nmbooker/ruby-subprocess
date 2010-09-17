@@ -97,8 +97,10 @@ class Subprocess
   end
 
   # Wait for the child process to exit.
-  # * Sets status to a Process::Status object.
-  # * Returns the same Process::Status object.
+  #
+  # Sets status to a Process::Status object, as well as returning it.
+  #
+  # @return [Process::Status] the status of the child process
   def wait
     pid, statusobj = Process.wait2(@pid)
     @status = statusobj
@@ -107,9 +109,13 @@ class Subprocess
   end
 
   # Sends the given signal to the child.
-  # _signal_ may be an integer signal number or a POSIX signal name
-  # (either with or without a SIG prefix).
+  # 
   # Not all signals are available on all platforms.
+  #
+  # @param [string, fixnum] signal An integer signal number or a POSIX signal
+  #                                name (either with or without a SIG prefix).
+  #
+  # @return [Fixnum] the return value of Process.kill
   def send_signal(signal)
     Process.kill(signal, @pid)
   end

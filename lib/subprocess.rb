@@ -122,7 +122,7 @@ class Subprocess
 
   # Call the given command, wait to complete and return a Process::Status.
   #
-  # The arguments are the same as for new
+  # The arguments are the same as for initialize (new)
   #
   # <b>Warning:</b> Like wait, this will deadlock when using
   # :stdout=>PIPE and/or :stderr=>PIPE and the child process generates enough

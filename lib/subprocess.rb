@@ -60,21 +60,24 @@ class Subprocess
   #             If nil (the default), then the child's standard output remains
   #             the same as the caller (your program).
   #             An open IO will cause the child's standard output to be
-  #             redirected to that file.
+  #             redirected to that file.  It must point to an IO with a real
+  #             file descriptor backing it, e.g. a file, pipe or STDIN.
   #             If Subprocess::PIPE, then a new pipe file object will be opened
   #             accessible as stdout, for you to read data from.
   # *:stdin*:: Specifies the child's input file handle.
   #            If nil (the default) then the child's standard input remains the
   #            same as the caller.
   #            An open IO will cause the child's standard input to be taken
-  #            from that file.
+  #            from that file.  The IO must point to a real file descriptor
+  #            e.g. a file, pipe or STDOUT/STDERR.
   #            If Subprocess::PIPE, then a new pipe object will be opened
   #            accessible as stdin, for you to write data to.
   # *:stderr*:: Specifies the child's standard error file handle.
   #             If nil (the default), then the child's standard error remains
   #             the same as the caller (your program).
   #             An open IO will cause the child's standard error to be
-  #             redirected to that file.
+  #             redirected to that file.  The IO must point to a real file
+  #             descriptor e.g. a file, pipe or STDOUT/STDERR.
   #             If Subprocess::PIPE, then a new pipe file object will be opened
   #             accessible as stderr, for you to read data from.
   def initialize(args, opts={})
